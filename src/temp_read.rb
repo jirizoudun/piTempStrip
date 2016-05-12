@@ -1,10 +1,12 @@
 #!/usr/bin/env ruby
 
 require 'fileutils'
+require 'socket'
+require_relative 'client'
 
 # TODO: Clean the code!
 
-SLEEP_TIME = 0.5#60*10 # Log temperature every x seconds.
+SLEEP_TIME = 5#60*10 # Log temperature every x seconds.
 SENSORS_DIR = '/sys/bus/w1/devices' # Directory where sensors are readed.
 OUTPUT_DIRECTORY = './temp_readings/'
 
@@ -79,6 +81,9 @@ while
   print_to_file t
 
   # TODO: Client side sending of temperature.
+  client = Client.new('living-room', 'localhost', 23457)
+  client.record(t)
+  client.close
 
   sleep SLEEP_TIME
 end
