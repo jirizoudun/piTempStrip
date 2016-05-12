@@ -17,7 +17,7 @@ class Client
     puts @server.gets.split(' ')
   end
 
-  def close()
+  def close
     @server.puts '0'
     @server.close
   end
