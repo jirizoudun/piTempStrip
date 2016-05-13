@@ -81,9 +81,13 @@ while
   print_to_file t
 
   # TODO: Client side sending of temperature.
-  client = Client.new('living-room', 'localhost', 23457)
-  client.record(t)
-  client.close
+  begin
+    client = Client.new('living-room', 'localhost', 23457)
+    client.record(t)
+    client.close
+  rescue Errno::ECONNREFUSED
+    p 'Connection to server refused'
+  end
 
   sleep SLEEP_TIME
 end
