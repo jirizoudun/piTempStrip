@@ -60,7 +60,7 @@ class Server
 
     # m = message.setup/^SETUP (\S+?) (\d+(\.\d+)?)$/
 
-    m = message.match /^RECORD (\S+?)\s+(\d+(\.\d+)?)$/
+    m = message.match /^RECORD (\S+?)\s+(-?\d+(\.\d+)?)$/
     return record m[1], m[2] unless m.nil?
 
     m = message.match /^READ (\S+?)\s+(\d+)$/
