@@ -4,7 +4,7 @@ require 'socket'
 require 'sequel'
 
 class Server
-  def initialize(database, port, hostname='127.0.0.1')
+  def initialize(database, port, hostname='0.0.0.0')
     puts "Starting server at #{hostname}:#{port}, using database #{database}"
 
     @server = TCPServer.new(hostname, port)
@@ -58,13 +58,33 @@ class Server
   def parse_message(client, message)
     puts "# received #{message}"
 
-    # m = message.setup/^SETUP (\S+?) (\d+(\.\d+)?)$/
+    m = message.match /^SETUP (\S+?)( ([a-z]+)\s+([a-z]+))?$/
+    unless m.nil?
+      if m[2].nil?
+        client.puts(readSetup m[1])
+      else
+        setup(m[1], m[3], m[4])
+      end
+      return
+    end
 
     m = message.match /^RECORD (\S+?)\s+(-?\d+(\.\d+)?)$/
     return record m[1], m[2] unless m.nil?
 
     m = message.match /^READ (\S+?)\s+(\d+)$/
-    client.puts(read m[1], m[2]) unless m.nil?
+    return client.puts(read m[1], m[2]) unless m.nil?
+
+    m = message.match /^LIST$/
+    client.puts(list) unless m.nil?
+  end
+
+  def readSetup(name)
+    setup = @db[:setup].select(:grouping, :mode).where(:name => name)
+    if setup.count != 0
+      puts setup
+      return setup.first[:grouping] + ' ' + setup.first[:mode]
+    end
+    'none none'
   end
 
   def setup(name, grouping, mode)
@@ -126,6 +146,11 @@ class Server
       .values
       .join(' ')
   end
+
+  def list
+    setup = @db[:setup].select(:name).union(@db[:temps].select(:name))
+    setup.all.map { |h| h[:name] }.join(' ')
+  end
 end
 
 if __FILE__ == $0
@@ -139,7 +164,7 @@ if __FILE__ == $0
   if ARGV.count == 2
     server = Server.new ARGV[0], ARGV[1]
   else
-    server = Server.new ARGV[0], ARGV[1]
+    server = Server.new ARGV[0], ARGV[1], ARGV[2]
   end
   server.run
 end
