@@ -6,7 +6,7 @@ require_relative 'client'
 
 # TODO: Clean the code!
 
-SLEEP_TIME = 60 # Log temperature every x seconds.
+SLEEP_TIME = 1 # Log temperature every x seconds.
 SENSORS_DIR = '/sys/bus/w1/devices' # Directory where sensors are readed.
 OUTPUT_DIRECTORY = './temp_readings/'
 

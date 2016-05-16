@@ -13,7 +13,7 @@ n = 24 # num leds
 
 class NeoPrinter
   def initialize(min_temperature, max_temperature)
-    @colors = Colors.new(min_temperature, max_temperature, 0x0000FF, 0xFF0000)
+    @colors = Colors.new(min_temperature, max_temperature, 0xFF00FF, 0xFF0000)
     neopixel # Init neopixel strip.
   end
 
@@ -39,15 +39,17 @@ class NeoPrinter
   private :neopixel
 end
 
-np = NeoPrinter.new(25, 32)
+np = NeoPrinter.new(25, 27)
 client = Client.new('living-room', 'localhost', 23457)
+
 while
   values = client.read(24)
   np.show_values(values.map {|x| x.to_f})
 
-  sleep 1
+  sleep 2
 end
 
+# Never happen..
 client.close
 
 
