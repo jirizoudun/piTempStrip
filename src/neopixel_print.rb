@@ -6,38 +6,72 @@
 
 $:.unshift(File.expand_path('../../lib', __FILE__))
 require 'ws2812'
+require_relative 'client'
 
-# Init
 n = 24 # num leds
-ws = Ws2812::Basic.new(n, 18) # +n+ leds at pin 18, using defaults
-ws.open
 
-ws.brightness = 128
+class NeoPrinter
+  def initialize(min_temperature, max_temperature)
+    @min_t = min_temperature
+    @max_t = max_temperature
+    @steps = 10
+    @temp_step = (@max_t - @min_t) / @steps.to_f
+    @color_tresholds = [Ws2812::Color.new(0xFF, 0, 0xFF),
+                        Ws2812::Color.new(0x7F, 0, 0xFF),
+                        Ws2812::Color.new(0, 0, 0xFF),
+                        Ws2812::Color.new(0, 0x80, 0xFF),
+                        Ws2812::Color.new(0, 0xFF, 0xFF),
+                        Ws2812::Color.new(0, 0xFF, 0x7F),
+                        Ws2812::Color.new(0, 0xFF, 0),
+                        Ws2812::Color.new(0x80, 0xFF, 0),
+                        Ws2812::Color.new(0xFF, 0xFF, 0),
+                        Ws2812::Color.new(0xFF, 0x7F, 0),
+                        Ws2812::Color.new(0xFF, 0, 0)]
 
-pos = 0
-
-while
-  color = [0, 0, 0]
-  
-  (0...24).each do |i|
-    color[pos] = i*10
-  
-    ws[i] = Ws2812::Color.new(color[0], color[1], color[2])
-    ws.show
-    sleep 0.25
+    @temp_tresholds = (0..@steps).map { |i| @min_t + i*@temp_step }
+    
+    neopixel # Init neopixel strip.
   end
 
-  pos = (pos + 1) % 3
-  color = [0, 0, 0]
+  def neopixel
+    @strip = Ws2812::Basic.new(24, 18) # 24 leds at pin 18, using defaults
+    @strip.open
+
+    @strip.brightness = 64
+  end
+
+  def show_values(values)
+    return unless values.kind_of?(Array)
+    return unless values.count <= 24
+
+    temp_colors = values.map do |value|
+      if(value < @max_t)
+        @color_tresholds[@temp_tresholds.find_index {|x| value < x}]
+      else
+        @color_tresholds[@steps]
+      end
+    end
+
+    temp_colors.each.with_index do |x, i|
+      @strip[i] = x
+    end
+
+    @strip.show
+  end
+
+  private :neopixel
 end
 
-abort
+np = NeoPrinter.new(25, 32)
+client = Client.new('living-room', 'localhost', 23457)
+while
+  values = client.read(24)
+  np.show_values(values.map {|x| x.to_f})
 
-# Some constans for temperature-color handling
-min_t = 22
-max_t = 26
-temp_steps = 10
-step = (max_t- min_t) / temp_steps
-# TODO: color tresholds: 0xFF00FF -> 0x0000FF -> 0x00FFFF -> 0x00FF00 -> 0xFFFF00 -> 0xFF0000
+  sleep 1
+end
+
+client.close
+
 
 

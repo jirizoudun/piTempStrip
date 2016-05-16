@@ -14,7 +14,7 @@ class Client
 
   def read(count)
     @server.puts "READ #{@name} #{count}"
-    puts @server.gets.split(' ')
+    @server.gets.split(' ')
   end
 
   def close
