@@ -7,29 +7,13 @@
 $:.unshift(File.expand_path('../../lib', __FILE__))
 require 'ws2812'
 require_relative 'client'
+require_relative 'colors'
 
 n = 24 # num leds
 
 class NeoPrinter
   def initialize(min_temperature, max_temperature)
-    @min_t = min_temperature
-    @max_t = max_temperature
-    @steps = 10
-    @temp_step = (@max_t - @min_t) / @steps.to_f
-    @color_tresholds = [Ws2812::Color.new(0xFF, 0, 0xFF),
-                        Ws2812::Color.new(0x7F, 0, 0xFF),
-                        Ws2812::Color.new(0, 0, 0xFF),
-                        Ws2812::Color.new(0, 0x80, 0xFF),
-                        Ws2812::Color.new(0, 0xFF, 0xFF),
-                        Ws2812::Color.new(0, 0xFF, 0x7F),
-                        Ws2812::Color.new(0, 0xFF, 0),
-                        Ws2812::Color.new(0x80, 0xFF, 0),
-                        Ws2812::Color.new(0xFF, 0xFF, 0),
-                        Ws2812::Color.new(0xFF, 0x7F, 0),
-                        Ws2812::Color.new(0xFF, 0, 0)]
-
-    @temp_tresholds = (0..@steps).map { |i| @min_t + i*@temp_step }
-    
+    @colors = Colors.new(min_temperature, max_temperature, 0x0000FF, 0xFF0000)
     neopixel # Init neopixel strip.
   end
 
@@ -44,16 +28,9 @@ class NeoPrinter
     return unless values.kind_of?(Array)
     return unless values.count <= 24
 
-    temp_colors = values.map do |value|
-      if(value < @max_t)
-        @color_tresholds[@temp_tresholds.find_index {|x| value < x}]
-      else
-        @color_tresholds[@steps]
-      end
-    end
-
-    temp_colors.each.with_index do |x, i|
-      @strip[i] = x
+    values.each_with_index do |temp, i|
+      color = @colors.at temp
+      @strip[i] = Ws2812::Color.new(color.rgb2[0], color.rgb2[1], color.rgb2[2])
     end
 
     @strip.show
