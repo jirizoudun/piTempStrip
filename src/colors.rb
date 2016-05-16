@@ -10,6 +10,9 @@ class Colors
   end
 
   def at(value)
+    return @c_min if value <= @min
+    return @c_max if value >= @max
+
     a = @c_min
     b = @c_max
     t = (value - @min) / (@max - @min).to_f
